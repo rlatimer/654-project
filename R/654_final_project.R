@@ -20,10 +20,14 @@ initial <- read_csv("C:/Users/rlatimer/Documents/personal/EDLD MS/EDLD 654 DS/65
 missing <- ff_glimpse(initial)
 missing
 
+#need to recode breeds, keeping first breed listed and removing 'mix'
+x <- initial$breed
+initial$breed1 <- (sapply(strsplit(x,'/'),`[`,1))
+
 #keeping desired variables
 aac <- initial %>%
   select(animal_id_outcome,outcome_type,sex_upon_outcome,
-         outcome_month, animal_type,breed,intake_condition,intake_type,
+         outcome_month, animal_type,breed1,intake_condition,intake_type,
          sex_upon_intake,age_upon_intake_years,intake_month,time_in_shelter_days)
 
 #recipe
@@ -32,7 +36,7 @@ outcome <- 'time_in_shelter_days'
 
 id      <- 'animal_id_outcome'
 
-categorical <- c('outcome_type','sex_upon_outcome','animal_type','breed','intake_condition',
+categorical <- c('outcome_type','sex_upon_outcome','animal_type','breed1','intake_condition',
                  'intake_type','sex_upon_intake')
 
 numeric <- c('age_upon_intake_years')
@@ -40,7 +44,7 @@ numeric <- c('age_upon_intake_years')
 cyclic <- c('outcome_month','intake_month')
 
 
-blueprint_aac <- recipe(x     = clean_initial,
+blueprint_aac <- recipe(x     = aac,
                            vars  = c(outcome,categorical,numeric,cyclic),
                            roles = c('outcome',rep('predictor',10))) %>%
   step_indicate_na(all_of(categorical),all_of(numeric)) %>%
@@ -62,8 +66,8 @@ View(blueprint_aac %>% prep() %>% summary)
 set.seed(12042021)  # for reproducibility
 
 loc      <- sample(1:nrow(aac), round(nrow(aac) * 0.8))
-aac_train  <- oregon[loc, ]
-aac_test  <- oregon[-loc, ]
+aac_train  <- aac[loc, ]
+aac_test  <- aac[-loc, ]
 
 
 # Randomly shuffle the data
@@ -86,7 +90,7 @@ cv <- trainControl(method = "cv",
 
 
 #Ridge
-grid <- data.frame(alpha = 0, lambda = seq(0.01,3,.01)) 
+grid <- data.frame(alpha = 0, lambda = seq(0.01,3,.05)) 
 #grid
 
 # Train the model
@@ -97,20 +101,26 @@ ridge <- caret::train(blueprint_aac,
                       trControl = cv,
                       tuneGrid  = grid)
 
-ridge$bestTune
+#22 warnings...
 
-#getting errors in this section
+ridge$bestTune
+#alpha lambda
+#22     0   1.06
+
+#getting errors in this section; I think because there are different "levels" of breed in
+#the test dataset than are in the training dataset
+#need to make sure the same breeds are in each (training and testing) datasets
 predict_te_ridge <- predict(ridge, aac_test)
 
 r_rsq_te <- cor(aac_test$time_in_shelter_days,predict_te_ridge)^2
 r_rsq_te
-# 0.4062631
+# 
 r_mae_te <- mean(abs(aac_test$time_in_shelter_days - predict_te_ridge))
 r_mae_te
-# 69.35026
+# 
 r_rmse_te <- sqrt(mean((aac_test$time_in_shelter_days - predict_te_ridge)^2))
 r_rmse_te
-# 89.12628  
+# 
 
 
 #Look at most important predictors
@@ -129,3 +139,4 @@ length(coefs.nonzero)
 ind   <- order(abs(coefs.nonzero),decreasing=T)
 head(as.matrix(coefs.nonzero[ind[-1]]),10)
 
+#breed is the most important predictor of time in the shelter.
