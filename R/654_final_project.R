@@ -11,6 +11,7 @@ require(recipes)
 require(finalfit)
 require(glmnet)
 require(stringr)
+require(ranger)
 
 initial <- read_csv("C:/Users/rlatimer/Documents/personal/EDLD MS/EDLD 654 DS/654project/data/aac_intakes_outcomes.csv")
 
@@ -141,9 +142,6 @@ ridge$bestTune
 #alpha lambda
 #35     0   1.71
 
-#getting errors in this section; I think because there are different "levels" of breed in
-#the test dataset than are in the training dataset
-#need to make sure the same breeds are in each (training and testing) datasets
 predict_te_ridge <- predict(ridge, aac_test)
 
 r_rsq_te <- cor(aac_test$time_in_shelter_days,predict_te_ridge)^2
@@ -174,3 +172,55 @@ ind   <- order(abs(coefs.nonzero),decreasing=T)
 head(as.matrix(coefs.nonzero[ind[-1]]),10)
 
 #breed is the most important predictor of time in the shelter.
+
+
+#Bagged Trees
+
+cv <- trainControl(method = "cv",
+                   index  = my.indices)
+
+grid <- expand.grid(mtry = 9,splitrule='variance',min.node.size=2)
+#grid
+
+aac_bt <- caret::train(blueprint_aac,
+                               data      = aac_train,
+                               method    = 'ranger',
+                               trControl = cv,
+                               tuneGrid  = grid,
+                               num.trees = 10,
+                               max.depth = 60)
+
+aac_bt$times
+
+# Predictions from a Bagged tree model with xx trees
+
+predicted_te <- predict(aac_bt,aac_test)
+
+# MAE
+
+bt_mae <- mean(abs(aac_test$time_in_shelter_days - predicted_te))
+#12.36
+
+# RMSE
+
+bt_rmse <- sqrt(mean((aac_test$time_in_shelter_days - predicted_te)^2))
+#34.38
+
+# R-square
+
+bt_rsqd <- cor(aac_test$time_in_shelter_days,predicted_te)^2
+#.27
+
+bagmod <- data.frame(Model = c("Bagged Trees Model"),
+                     RMSE = c(bt_rmse),
+                     MAE = c(bt_mae),
+                     Rsq = c(bt_rsqd))
+
+ridgemod <- data.frame(Model = c("Linear Regression with Ridge Penalty"),
+                     RMSE = c(r_rmse_te),
+                     MAE = c(r_mae_te),
+                     Rsq = c(r_rsq_te))
+
+#Final Table
+SumTable <- rbind(bagmod, ridgemod)
+SumTable
