@@ -1,9 +1,5 @@
 #654 project
 
-#use UG GSS survey data?
-#greater satisfaction (based on average rating) -> more likely to attend graduate school at UO?
-#higher gpa -> more likely to attend graduate school
-#higher utilization of advising has an outcome?
 #install.packages("janitor")
 library(tidyverse)
 library(janitor)
@@ -14,21 +10,55 @@ require(caret)
 require(recipes)
 require(finalfit)
 require(glmnet)
+require(stringr)
 
 initial <- read_csv("C:/Users/rlatimer/Documents/personal/EDLD MS/EDLD 654 DS/654project/data/aac_intakes_outcomes.csv")
 
 missing <- ff_glimpse(initial)
 missing
 
+
+#only keep dogs
+initial <- dplyr::filter(initial, grepl('Dog', animal_type))
+
 #need to recode breeds, keeping first breed listed and removing 'mix'
 x <- initial$breed
 initial$breed1 <- (sapply(strsplit(x,'/'),`[`,1))
+initial <- initial %>%
+  select(-breed)
+
+#remove "Mix" from breed label
+breeds <- c(initial$breed1)
+breed2 <- str_remove_all(breeds, "Mix")
+
+initial3 <- cbind(initial,
+                   as.data.frame(breed2)
+)
+
+#trim whitespace on breed
+initial3$breed <- trimws(initial3$breed2, which = c("both"))
+
+initial4 <- initial3 %>%
+  select(-breed1, -breed2)
+
 
 #keeping desired variables
-aac <- initial %>%
+aac <- initial4 %>%
   select(animal_id_outcome,outcome_type,sex_upon_outcome,
-         outcome_month, animal_type,breed1,intake_condition,intake_type,
+         outcome_month, animal_type,breed,intake_condition,intake_type,
          sex_upon_intake,age_upon_intake_years,intake_month,time_in_shelter_days)
+
+
+#keep only breeds where n>=20
+aac<-aac %>%
+  group_by(breed) %>%
+  filter(n() > 19)
+
+#look at all the breeds and percent
+table_breed<-aac %>% group_by(breed) %>% summarize(Freq=n()) %>% arrange(desc(Freq))
+View(table_test)
+
+
 
 #recipe
 
@@ -36,7 +66,7 @@ outcome <- 'time_in_shelter_days'
 
 id      <- 'animal_id_outcome'
 
-categorical <- c('outcome_type','sex_upon_outcome','animal_type','breed1','intake_condition',
+categorical <- c('outcome_type','sex_upon_outcome','breed','intake_condition',
                  'intake_type','sex_upon_intake')
 
 numeric <- c('age_upon_intake_years')
@@ -46,7 +76,7 @@ cyclic <- c('outcome_month','intake_month')
 
 blueprint_aac <- recipe(x     = aac,
                            vars  = c(outcome,categorical,numeric,cyclic),
-                           roles = c('outcome',rep('predictor',10))) %>%
+                           roles = c('outcome',rep('predictor',9))) %>%
   step_indicate_na(all_of(categorical),all_of(numeric)) %>%
   step_zv(all_numeric()) %>%
   step_impute_mean(all_of(numeric)) %>%
@@ -59,7 +89,7 @@ blueprint_aac <- recipe(x     = aac,
   step_dummy(all_of(categorical),one_hot=TRUE) %>%
   step_rm(c('outcome_month','intake_month'))
 
-View(blueprint_aac %>% prep() %>% summary)
+#View(blueprint_aac %>% prep() %>% summary)
 
 #splitting data for testing and training
 
@@ -68,6 +98,10 @@ set.seed(12042021)  # for reproducibility
 loc      <- sample(1:nrow(aac), round(nrow(aac) * 0.8))
 aac_train  <- aac[loc, ]
 aac_test  <- aac[-loc, ]
+
+#need all breeds in each sample
+#loc2 <- aac %>% group_by(breed1) %>% sample_frac(0.8)
+#  %>% else acc_test2
 
 
 # Randomly shuffle the data
@@ -101,11 +135,11 @@ ridge <- caret::train(blueprint_aac,
                       trControl = cv,
                       tuneGrid  = grid)
 
-#22 warnings...
+#2 warnings...
 
 ridge$bestTune
 #alpha lambda
-#22     0   1.06
+#35     0   1.71
 
 #getting errors in this section; I think because there are different "levels" of breed in
 #the test dataset than are in the training dataset
