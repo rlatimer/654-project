@@ -1,6 +1,8 @@
 #654 project
 
 #install.packages("janitor")
+#install.packages('gt')
+
 library(tidyverse)
 library(janitor)
 library(here)
@@ -12,15 +14,18 @@ require(finalfit)
 require(glmnet)
 require(stringr)
 require(ranger)
+require(ggplot2)
+require(forcats)
+require(gt)
 
-initial <- read_csv("C:/Users/rlatimer/Documents/personal/EDLD MS/EDLD 654 DS/654project/data/aac_intakes_outcomes.csv")
+data <- read_csv("C:/Users/rlatimer/Documents/personal/EDLD MS/EDLD 654 DS/654project/data/aac_intakes_outcomes.csv")
 
-missing <- ff_glimpse(initial)
+missing <- ff_glimpse(data)
 missing
 
 
 #only keep dogs
-initial <- dplyr::filter(initial, grepl('Dog', animal_type))
+initial <- dplyr::filter(data, grepl('Dog', animal_type))
 
 #need to recode breeds, keeping first breed listed and removing 'mix'
 x <- initial$breed
@@ -224,3 +229,39 @@ ridgemod <- data.frame(Model = c("Linear Regression with Ridge Penalty"),
 #Final Table
 SumTable <- rbind(bagmod, ridgemod)
 SumTable
+
+#Visualizations
+#pivot wider?
+month_count<-data %>%
+  count(intake_month,sort=TRUE) 
+
+month_count_wide <- month_count %>% 
+  pivot_wider(names_from = "intake_month",
+              values_from = "n")
+
+#Rough histogram of total animal intakes by month
+ggplot(data = month_count, mapping = aes(intake_month,n)) + 
+  geom_col()
+
+#Table of Intake of Animal Type by Month
+
+smry <- data %>% 
+  count(animal_type, intake_month) %>% 
+  drop_na(animal_type,intake_month) %>%
+  pivot_wider(names_from = "animal_type", 
+   values_from = "n") 
+
+smry %>% 
+  gt() %>% 
+tab_spanner(
+  label = "Animal Type",
+  columns = vars(`Bird`, `Cat`, `Dog`, `Other`)
+) %>% 
+  data_color(
+    vars(`Bird`, `Cat`, `Dog`, `Other`),
+    colors = scales::col_numeric(
+      palette = c("#FFFFFF", "#FF0000"),
+      domain = NULL
+    )
+  ) %>%
+  cols_label(intake_month = "Intake Month")
