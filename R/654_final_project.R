@@ -3,6 +3,8 @@
 #install.packages("janitor")
 #install.packages('gt')
 
+
+
 library(tidyverse)
 library(janitor)
 library(here)
@@ -241,7 +243,8 @@ month_count_wide <- month_count %>%
 
 #Rough histogram of total animal intakes by month
 ggplot(data = month_count, mapping = aes(intake_month,n)) + 
-  geom_col()
+  geom_point()+
+  geom_line()
 
 #Table of Intake of Animal Type by Month
 
