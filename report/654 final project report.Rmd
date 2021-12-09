@@ -267,7 +267,7 @@ bt_rmse <- sqrt(mean((aac_test$time_in_shelter_days - predicted_te)^2))
 
 bt_rsqd <- cor(aac_test$time_in_shelter_days,predicted_te)^2
 ```
-|  Three types of modeling approaches were explored: linear regression, linear regression with ridge penalty, and bagged trees. 
+|  In order to predict the length of stay of shelter dogs, three types of modeling approaches were explored: linear regression, linear regression with ridge penalty, and bagged trees. 
 
 
 ## Results
