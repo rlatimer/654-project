@@ -19,6 +19,7 @@ require(ranger)
 require(ggplot2)
 require(forcats)
 require(gt)
+tinytex::reinstall_tinytex()
 
 data <- read_csv("C:/Users/rlatimer/Documents/personal/EDLD MS/EDLD 654 DS/654project/data/aac_intakes_outcomes.csv")
 
@@ -176,6 +177,8 @@ coefs.nonzero <- coefs[which(coefs[,1]!=0),]
 length(coefs.nonzero)
 
 ind   <- order(abs(coefs.nonzero),decreasing=T)
+
+#using as a table: needs formatting
 head(as.matrix(coefs.nonzero[ind[-1]]),10)
 
 #breed is the most important predictor of time in the shelter.
@@ -229,6 +232,7 @@ ridgemod <- data.frame(Model = c("Linear Regression with Ridge Penalty"),
                      Rsq = c(r_rsq_te))
 
 #Final Table
+#needs formatting
 SumTable <- rbind(bagmod, ridgemod)
 SumTable
 

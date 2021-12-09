@@ -9,6 +9,9 @@ output:
 
 ```{r setup, include=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(janitor)
+library(here)
 require(readr)
 require(caret)
 require(recipes)
@@ -44,13 +47,15 @@ summary(cars)
 |  The data were obtained from [kaggle] (https://www.kaggle.com/aaronschlegel/austin-animal-center-shelter-intakes-and-outcomes?select=aac_intakes_outcomes.csv). It was originally provided by the Austin Animal Center in Austin, Texas. The data include information about the intake and outcome of the animal, and details on the type and condition of the animal. A brief examination of the data revealed that the animal shelter takes in animals in addition to typical domestic pets (cats and dogs). For the purposes of this study, the following types of animals were excluded: cats, birds, and animals that were classified as other, including rabbits, bats, snakes, raccoons, ferrets, reptiles, and other wild animals that live in close proximity to humans. Additionally, dog breeds with sample sizes less than 20 were excluded as this small sample made it difficult to accurately model the length of stay for the breed. The final data set included variables of the animal (breed, age on intake, sex, condition of the animal), circumstances of the animal arriving at the shelter (type of intake, month of intake), and specifics of the outcome of the animal (outcome, month of outcome, time spent in the shelter, measured in days).  
 |  Initial data visualization was performed to understand the data available. This included visualizing the number of animals taken into the shelter each month (Figure 1) and further exploring the number of each type of animal taken in each month (Table 1). 
 
-**Figure 1.** _Shelter Animals Taken in Each Month_
-```{r fig1, warning = FALSE, message = FALSE, echo=FALSE}
+
+```{r fig1, warning = FALSE, message = FALSE, echo=FALSE, fig.align = 'center'}
 #Rough histogram of total animal intakes by month
 ggplot(data = month_count, mapping = aes(intake_month,n)) + 
   geom_point()+
   geom_line()
 ```
+**Figure 1.** _Shelter Animals Taken in Each Month_
+
 
 **Table 1.** _Type of Shelter Animal Taken in Each Month_
 
@@ -79,7 +84,189 @@ tab_spanner(
   cols_label(intake_month = "Intake Month")
 ```
 
+```{r processing, warning = FALSE, message = FALSE, echo=FALSE}
+
+#only keep dogs
+initial <- dplyr::filter(data, grepl('Dog', animal_type))
+
+#need to recode breeds, keeping first breed listed and removing 'mix'
+x <- initial$breed
+initial$breed1 <- (sapply(strsplit(x,'/'),`[`,1))
+initial <- initial %>%
+  select(-breed)
+
+#remove "Mix" from breed label
+breeds <- c(initial$breed1)
+breed2 <- str_remove_all(breeds, "Mix")
+
+initial3 <- cbind(initial,
+                   as.data.frame(breed2)
+)
+
+#trim whitespace on breed
+initial3$breed <- trimws(initial3$breed2, which = c("both"))
+
+initial4 <- initial3 %>%
+  select(-breed1, -breed2)
+
+
+#keeping desired variables
+aac <- initial4 %>%
+  select(animal_id_outcome,outcome_type,sex_upon_outcome,
+         outcome_month, animal_type,breed,intake_condition,intake_type,
+         sex_upon_intake,age_upon_intake_years,intake_month,time_in_shelter_days)
+
+
+#keep only breeds where n>=20
+aac<-aac %>%
+  group_by(breed) %>%
+  filter(n() > 19)
+```
+
 ## Models
+```{r recipe, warning = FALSE, message = FALSE, echo=FALSE}
+
+outcome <- 'time_in_shelter_days'
+
+id      <- 'animal_id_outcome'
+
+categorical <- c('outcome_type','sex_upon_outcome','breed','intake_condition',
+                 'intake_type','sex_upon_intake')
+
+numeric <- c('age_upon_intake_years')
+
+cyclic <- c('outcome_month','intake_month')
+
+
+blueprint_aac <- recipe(x     = aac,
+                           vars  = c(outcome,categorical,numeric,cyclic),
+                           roles = c('outcome',rep('predictor',9))) %>%
+  step_indicate_na(all_of(categorical),all_of(numeric)) %>%
+  step_zv(all_numeric()) %>%
+  step_impute_mean(all_of(numeric)) %>%
+  step_impute_mode(all_of(categorical)) %>%
+  step_harmonic('intake_month',frequency=1,cycle_size=12,role='predictor') %>%
+  step_harmonic('outcome_month',frequency=1,cycle_size=12,role='predictor') %>%
+  step_ns('age_upon_intake_years',deg_free=3) %>%
+  step_normalize(c(paste0(numeric,'_ns_1'),paste0(numeric,'_ns_2'),paste0(numeric,'_ns_3'))) %>%
+  step_normalize(c("outcome_month_sin_1","outcome_month_cos_1","intake_month_sin_1","intake_month_cos_1")) %>%
+  step_dummy(all_of(categorical),one_hot=TRUE) %>%
+  step_rm(c('outcome_month','intake_month'))
+
+#View(blueprint_aac %>% prep() %>% summary)
+
+#splitting data for testing and training
+
+set.seed(12042021)  # for reproducibility
+
+loc      <- sample(1:nrow(aac), round(nrow(aac) * 0.8))
+aac_train  <- aac[loc, ]
+aac_test  <- aac[-loc, ]
+
+#need all breeds in each sample
+#loc2 <- aac %>% group_by(breed1) %>% sample_frac(0.8)
+#  %>% else acc_test2
+
+
+# Randomly shuffle the data
+
+aac_train = aac_train[sample(nrow(aac_train)),]
+
+# Create 10 folds with equal size
+
+folds = cut(seq(1,nrow(aac_train)),breaks=10,labels=FALSE)
+
+# Create the list for each fold 
+
+my.indices <- vector('list',10)
+for(i in 1:10){
+  my.indices[[i]] <- which(folds!=i)
+}
+
+cv <- trainControl(method = "cv",
+                   index  = my.indices)
+```
+
+```{r ridge, warning = FALSE, message = FALSE, echo=FALSE}
+#Ridge
+grid <- data.frame(alpha = 0, lambda = seq(0.01,3,.05)) 
+#grid
+
+# Train the model
+
+ridge <- caret::train(blueprint_aac, 
+                      data      = aac_train, 
+                      method    = "glmnet", 
+                      trControl = cv,
+                      tuneGrid  = grid)
+
+#2 warnings...
+
+#ridge$bestTune
+#alpha lambda
+#35     0   1.71
+
+predict_te_ridge <- predict(ridge, aac_test)
+
+r_rsq_te <- cor(aac_test$time_in_shelter_days,predict_te_ridge)^2
+
+r_mae_te <- mean(abs(aac_test$time_in_shelter_days - predict_te_ridge))
+
+r_rmse_te <- sqrt(mean((aac_test$time_in_shelter_days - predict_te_ridge)^2))
+
+
+
+#Look at most important predictors
+
+  #using Logistic Regression with Ridge Penalty 
+
+coefs <- coef(ridge$finalModel,
+              ridge$bestTune$lambda)
+
+coefs.zero <- coefs[which(coefs[,1]==0),]
+#length(coefs.zero)
+
+coefs.nonzero <- coefs[which(coefs[,1]!=0),]
+#length(coefs.nonzero)
+
+ind   <- order(abs(coefs.nonzero),decreasing=T)
+
+```
+
+```{r bagged_trees, warning = FALSE, message = FALSE, echo=FALSE}
+#Bagged Trees
+
+cv <- trainControl(method = "cv",
+                   index  = my.indices)
+
+grid <- expand.grid(mtry = 9,splitrule='variance',min.node.size=2)
+#grid
+
+aac_bt <- caret::train(blueprint_aac,
+                               data      = aac_train,
+                               method    = 'ranger',
+                               trControl = cv,
+                               tuneGrid  = grid,
+                               num.trees = 10,
+                               max.depth = 60)
+
+aac_bt$times
+
+# Predictions from a Bagged tree model with xx trees
+
+predicted_te <- predict(aac_bt,aac_test)
+
+
+bt_mae <- mean(abs(aac_test$time_in_shelter_days - predicted_te))
+
+# RMSE
+
+bt_rmse <- sqrt(mean((aac_test$time_in_shelter_days - predicted_te)^2))
+
+# R-square
+
+bt_rsqd <- cor(aac_test$time_in_shelter_days,predicted_te)^2
+```
 |  Three types of modeling approaches were explored: linear regression, linear regression with ridge penalty, and bagged trees. 
 
 
@@ -87,11 +274,29 @@ tab_spanner(
 
 
 
-**Table 2.**
-```{r table2, warning = FALSE, message = FALSE, echo=FALSE}
-#plot(pressure)
+**Table 2.** _Top Ten Predictors of Shelter Length of Stay from Linear Regression with Ridge Penalty Model_
+```{r rpredictors, warning = FALSE, message = FALSE, echo=FALSE}
+head(as.matrix(coefs.nonzero[ind[-1]]),10)
 ```
 
+Comparing the three models, reveals that the (model) has the lowest RMSE (Table 3).
+
+**Table 3.** _Model Comparison_
+```{r comparison, warning = FALSE, message = FALSE, echo=FALSE}
+bagmod <- data.frame(Model = c("Bagged Trees Model"),
+                     RMSE = c(bt_rmse),
+                     MAE = c(bt_mae),
+                     Rsq = c(bt_rsqd))
+
+ridgemod <- data.frame(Model = c("Linear Regression with Ridge Penalty"),
+                     RMSE = c(r_rmse_te),
+                     MAE = c(r_mae_te),
+                     Rsq = c(r_rsq_te))
+
+#Final Table
+SumTable <- rbind(bagmod, ridgemod)
+SumTable
+```
 
 
 ## Discussion
