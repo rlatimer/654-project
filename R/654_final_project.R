@@ -2,8 +2,7 @@
 
 #install.packages("janitor")
 #install.packages('gt')
-
-
+#install.packages('kableExtra')
 
 library(tidyverse)
 library(janitor)
@@ -19,7 +18,9 @@ require(ranger)
 require(ggplot2)
 require(forcats)
 require(gt)
-tinytex::reinstall_tinytex()
+require(knitr)
+require(kableExtra)
+#tinytex::reinstall_tinytex()
 
 data <- read_csv("C:/Users/rlatimer/Documents/personal/EDLD MS/EDLD 654 DS/654project/data/aac_intakes_outcomes.csv")
 
@@ -65,8 +66,18 @@ aac<-aac %>%
 
 #look at all the breeds and percent
 table_breed<-aac %>% group_by(breed) %>% summarize(Freq=n()) %>% arrange(desc(Freq))
-View(table_test)
 
+shelter_days<-aac %>%
+  group_by(breed) %>%
+  summarise_at(vars(time_in_shelter_days), mean)
+
+shelter_breed<-left_join(table_breed, shelter_days) %>%
+  arrange(desc(Freq)) %>%
+  slice_head(n=25)
+
+shelter_breed %>%
+  kable(col.names = c('Breed', 'N', 'Avg. Length of Stay (days)')) %>%
+  kable_styling(font_size = 11, position = "left", full_width = FALSE)
 
 
 #recipe
@@ -132,6 +143,39 @@ cv <- trainControl(method = "cv",
                    index  = my.indices)
 
 
+
+#---------------------------------------------------#
+# linear regression without regularization
+
+
+lr <- caret::train(blueprint_aac, 
+                          data      = aac_train, 
+                          method    = "lm", 
+                          trControl = cv)
+
+lr$bestTune
+#   RMSE      Rsquared   MAE     
+#  
+
+predicted_te <- predict(lr, aac_test)
+
+lr_rsq_te <- cor(aac_test$time_in_shelter_days,predicted_te)^2
+lr_rsq_te
+# 0.1077
+
+lr_mae_te <- mean(abs(aac_test$time_in_shelter_days - predicted_te))
+lr_mae_te
+#16.7687
+lr_rmse_te <- sqrt(mean((aac_test$time_in_shelter_days - predicted_te)^2))
+lr_rmse_te
+#37.656
+
+
+#RSQ for training data () similar to RSQ for testing data (), suggesting
+# the model is not overfitted to the training data.
+
+
+#-----------------------------------------#
 #Ridge
 grid <- data.frame(alpha = 0, lambda = seq(0.01,3,.05)) 
 #grid
@@ -200,7 +244,7 @@ aac_bt <- caret::train(blueprint_aac,
                                num.trees = 10,
                                max.depth = 60)
 
-aac_bt$times
+#aac_bt$bestTune
 
 # Predictions from a Bagged tree model with xx trees
 
@@ -216,10 +260,11 @@ bt_mae <- mean(abs(aac_test$time_in_shelter_days - predicted_te))
 bt_rmse <- sqrt(mean((aac_test$time_in_shelter_days - predicted_te)^2))
 #34.38
 
+
 # R-square
 
 bt_rsqd <- cor(aac_test$time_in_shelter_days,predicted_te)^2
-#.27
+#.26
 
 bagmod <- data.frame(Model = c("Bagged Trees Model"),
                      RMSE = c(bt_rmse),
@@ -231,9 +276,14 @@ ridgemod <- data.frame(Model = c("Linear Regression with Ridge Penalty"),
                      MAE = c(r_mae_te),
                      Rsq = c(r_rsq_te))
 
+lrmod <- data.frame(Model = c("Linear Regression"),
+                       RMSE = c(lr_rmse_te),
+                       MAE = c(lr_mae_te),
+                       Rsq = c(lr_rsq_te))
+
 #Final Table
 #needs formatting
-SumTable <- rbind(bagmod, ridgemod)
+SumTable <- rbind(lrmod, ridgemod, bagmod)
 SumTable
 
 #Visualizations

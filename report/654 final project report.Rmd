@@ -22,6 +22,9 @@ require(ranger)
 require(ggplot2)
 require(forcats)
 require(gt)
+require(knitr)
+require(kableExtra)
+
 
 ```
 
@@ -36,16 +39,16 @@ month_count_wide <- month_count %>%
 ```
 
 
-|  As people stayed home for most of the early days of the coronavirus pandemic, the demand for goods and services increased. Some of the increased demand was not surprising and likely expected; items such as home workout equipment, trampolines, and lumber. However, some of the demand took the industry by surprise: yeast for baking, and pets. In fact, the interest in pet adoption increased so much that shelters were regularly reporting empty kennels and sifting through dozens of adoption applications for a single puppy.  
-|  Unfortunately, as vaccines were rolled out and people began returning to work and school, shelters and foster groups filled up with animals that were no longer compatible with people’s lifestyles. The decrease in demand for dogs means that people can be more selective in the kind of dog they adopt. However, the information provided by animal shelters and rescue groups are often based on a short period of time with the animal and the animal’s appearance. One shelter’s Border collie mix might be another’s spaniel or shepherd mix. This best guess breed identification can have significant impacts on a dog’s future and could be the difference between adoption and euthanasia. Objectively identifying the impact of a dog’s listed breed on the length of stay in an animal shelter could provide shelters with the information needed to shift away from listing a dog’s breed as the primary information for potential adopter and toward a more holistic evaluation of a dog’s temperament and future needs.
+|     As people stayed home for most of the early days of the coronavirus pandemic, the demand for goods and services increased. Some of the increased demand was not surprising and likely expected; items such as home workout equipment, trampolines, and lumber. However, some of the demand took the industry by surprise: yeast for baking, and pets. In fact, the interest in pet adoption increased so much that shelters were regularly reporting empty kennels and sifting through dozens of adoption applications for a single puppy.  
+|     Unfortunately, as vaccines were rolled out and people began returning to work and school, shelters and foster groups filled up with animals that were no longer compatible with people’s lifestyles. The decrease in demand for dogs means that people can be more selective in the kind of dog they adopt. However, the information provided by animal shelters and rescue groups are often based on a short period of time with the animal and the animal’s appearance. One shelter’s Border collie mix might be another’s spaniel or shepherd mix. This best guess breed identification can have significant impacts on a dog’s future and could be the difference between adoption and euthanasia. Objectively identifying the impact of a dog’s listed breed on the length of stay in an animal shelter could provide shelters with the information needed to shift away from listing a dog’s breed as the primary information for potential adopter and toward a more holistic evaluation of a dog’s temperament and future needs.
 
 ```{r cars, warning = FALSE, message = FALSE, echo=TRUE}
 summary(cars)
 ```
 
 ## Data
-|  The data were obtained from [kaggle] (https://www.kaggle.com/aaronschlegel/austin-animal-center-shelter-intakes-and-outcomes?select=aac_intakes_outcomes.csv). It was originally provided by the Austin Animal Center in Austin, Texas. The data include information about the intake and outcome of the animal, and details on the type and condition of the animal. A brief examination of the data revealed that the animal shelter takes in animals in addition to typical domestic pets (cats and dogs). For the purposes of this study, the following types of animals were excluded: cats, birds, and animals that were classified as other, including rabbits, bats, snakes, raccoons, ferrets, reptiles, and other wild animals that live in close proximity to humans. Additionally, dog breeds with sample sizes less than 20 were excluded as this small sample made it difficult to accurately model the length of stay for the breed. The final data set included variables of the animal (breed, age on intake, sex, condition of the animal), circumstances of the animal arriving at the shelter (type of intake, month of intake), and specifics of the outcome of the animal (outcome, month of outcome, time spent in the shelter, measured in days).  
-|  Initial data visualization was performed to understand the data available. This included visualizing the number of animals taken into the shelter each month (Figure 1) and further exploring the number of each type of animal taken in each month (Table 1). 
+|     The Austin Animal Center in Texas is the largest no-kill shelter in the US. The shelter maintains data on the intake and outcomes of animals beginning from October 2013 to present. This data set was obtained from kaggle: (https://www.kaggle.com/aaronschlegel/austin-animal-center-shelter-intakes-and-outcomes?select=aac_intakes_outcomes.csv). It was originally provided by the Austin Animal Center in Austin, Texas. The data include information about the intake and outcome of the animal, and details on the type and condition of the animal. A brief examination of the data revealed that the animal shelter takes in animals in addition to typical domestic pets (cats and dogs). For the purposes of this study, the following types of animals were excluded: cats, birds, and animals that were classified as other, including rabbits, bats, snakes, raccoons, ferrets, reptiles, and other wild animals that live in close proximity to humans. Additionally, dog breeds with sample sizes less than 20 were excluded as this small sample made it difficult to accurately model the length of stay for the breed. The final data set included variables of the animal (breed, age on intake, sex, condition of the animal), circumstances of the animal arriving at the shelter (type of intake, month of intake), and specifics of the outcome of the animal (outcome, month of outcome, time spent in the shelter, measured in days).  
+|     Initial data visualization was performed to understand the data available. This included visualizing the number of animals taken into the shelter each month (Figure 1) and further exploring the number of each type of animal taken in each month (Table 1). 
 
 
 ```{r fig1, warning = FALSE, message = FALSE, echo=FALSE, fig.align = 'center'}
@@ -82,6 +85,25 @@ tab_spanner(
     )
   ) %>%
   cols_label(intake_month = "Intake Month")
+```
+
+It is also of interest to explore the relationship between the average length of stay in the shelter of each breed with the frequency of that breed present in the shelter. Table 2 provides the average length of stay in the shelter for the 25 most frequently taken in dog breeds. 
+
+**Table 2.** _Average Length of Stay (in days) for Most Common Dog Breeds in Shelter_
+```{r table2, warning = FALSE, message = FALSE, echo=FALSE}
+table_breed<-aac %>% group_by(breed) %>% summarize(Freq=n()) %>% arrange(desc(Freq))
+
+shelter_days<-aac %>%
+  group_by(breed) %>%
+  summarise_at(vars(time_in_shelter_days), mean)
+
+shelter_breed<-left_join(table_breed, shelter_days) %>%
+  arrange(desc(Freq)) %>%
+  slice_head(n=25)
+
+shelter_breed %>%
+  kable(col.names = c('Breed', 'N', 'Avg. Length of Stay (days)')) %>%
+  kable_styling(font_size = 11, position = "left", full_width = FALSE)
 ```
 
 ```{r processing, warning = FALSE, message = FALSE, echo=FALSE}
@@ -187,6 +209,32 @@ cv <- trainControl(method = "cv",
                    index  = my.indices)
 ```
 
+```{r linear_reg, warning = FALSE, message = FALSE, echo=FALSE}
+# linear regression without regularization
+
+
+lr <- caret::train(blueprint_aac, 
+                          data      = aac_train, 
+                          method    = "lm", 
+                          trControl = cv)
+
+lr$bestTune
+#   RMSE      Rsquared   MAE     
+#  
+
+predicted_te <- predict(lr, aac_test)
+
+lr_rsq_te <- cor(aac_test$time_in_shelter_days,predicted_te)^2
+
+# 0.1077
+
+lr_mae_te <- mean(abs(aac_test$time_in_shelter_days - predicted_te))
+
+#16.7687
+lr_rmse_te <- sqrt(mean((aac_test$time_in_shelter_days - predicted_te)^2))
+#37.656
+```
+
 ```{r ridge, warning = FALSE, message = FALSE, echo=FALSE}
 #Ridge
 grid <- data.frame(alpha = 0, lambda = seq(0.01,3,.05)) 
@@ -267,21 +315,20 @@ bt_rmse <- sqrt(mean((aac_test$time_in_shelter_days - predicted_te)^2))
 
 bt_rsqd <- cor(aac_test$time_in_shelter_days,predicted_te)^2
 ```
-|  In order to predict the length of stay of shelter dogs, three types of modeling approaches were explored: linear regression, linear regression with ridge penalty, and bagged trees. 
-
+|     In order to predict the length of stay of shelter dogs, three types of modeling approaches were explored: linear regression, linear regression with ridge penalty, and bagged trees. These models were chosen for their increasing complexity to determine the extent to which the increasing complexity added value to or impacted the predictions and importance of variables used in the predictions. All models were fit with 10-fold cross validation for comparison purposes. The performances of the models will be compared using the values of R-squared, MAE, and RMSE.
 
 ## Results
+|     The linear regression without regularization produced an RMSE of 37.66, and MAE of 16.77 and an r-squared of .11. The linear regression with ridge penalty produced an RMSE of 37.66, MAE of 16.57, and r-squared of .11. These results are very similar to those of the linear regression without regularization. The model also revealed the top ten predictors of length of stay for shelter dogs, which included eight specific breeds (Table 3).
 
 
-
-**Table 2.** _Top Ten Predictors of Shelter Length of Stay from Linear Regression with Ridge Penalty Model_
+**Table 3.** _Top Ten Predictors of Shelter Length of Stay from Linear Regression with Ridge Penalty Model_
 ```{r rpredictors, warning = FALSE, message = FALSE, echo=FALSE}
 head(as.matrix(coefs.nonzero[ind[-1]]),10)
 ```
 
-Comparing the three models, reveals that the (model) has the lowest RMSE (Table 3).
+|    The bagged tree model had a similar RMSE as the linear regression without regularization and the linear regression with ridge penalty (34.45), a lower MAE of 12.36, and a higher r-squared at .26. Due to the similar RMSE and MAE of all three models, I would choose the bagged tree model due to the higher r-squared value. The three models are compared in Table 4. 
 
-**Table 3.** _Model Comparison_
+**Table 4.** _Model Comparison_
 ```{r comparison, warning = FALSE, message = FALSE, echo=FALSE}
 bagmod <- data.frame(Model = c("Bagged Trees Model"),
                      RMSE = c(bt_rmse),
@@ -293,17 +340,22 @@ ridgemod <- data.frame(Model = c("Linear Regression with Ridge Penalty"),
                      MAE = c(r_mae_te),
                      Rsq = c(r_rsq_te))
 
+lrmod <- data.frame(Model = c("Linear Regression"),
+                       RMSE = c(lr_rmse_te),
+                       MAE = c(lr_mae_te),
+                       Rsq = c(lr_rsq_te))
+
 #Final Table
-SumTable <- rbind(bagmod, ridgemod)
+#needs formatting
+SumTable <- rbind(lrmod, ridgemod, bagmod)
 SumTable
 ```
 
 
 ## Discussion
+|     As Table 3 illustrated, the breed of the dog is highly predictive of the amount of time a dog spends in an animal shelter. Although there are a number of large breed dogs, there is not an obvious category of dog that is more predictive of the length of stay. For example, there are representatives of a variety of AKC dog groups: the non-sporting group (Bulldog, Tibetan Spaniel), the herding group (Collie), hound (Coonhound); sizes: the Terrier and the Tibetan Spaniel being small dogs, and the Retriever and Bulldog being larger dogs, and temperament. This suggests there may be some prejudice or unfamiliarity of some breeds. 
 
 ## Conclusion
+|     This wide variety of dog breeds in the top ten category is surprising. I would have thoughts that the larger dogs and bully-type dogs would occupy the top spots. I was not, however, surprised that breed was a top predictor of the length of stay in the shelter. The breed of the dog is often the best predictor of temperament of a dog, however if the breed listed is only based on a dog’s appearance and not genetics or the dog’s history, then breed is less powerful of a predictor. Shelters may find they have better success matching shelter dogs with their forever families if they provide a more thorough behavioral evaluation of the dog and assessment of the dog’s future needs to potential adopters. 
 
 
-## References
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
