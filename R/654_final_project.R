@@ -154,9 +154,9 @@ lr <- caret::train(blueprint_aac,
                           method    = "lm", 
                           trControl = cv)
 
-lr$bestTune
+#lr
 #   RMSE      Rsquared   MAE     
-#  
+#  0.6564545  0.6276938  0.5218975
 
 predicted_te <- predict(lr, aac_test)
 
@@ -172,8 +172,16 @@ lr_rmse_te
 #37.656
 
 
-#RSQ for training data () similar to RSQ for testing data (), suggesting
-# the model is not overfitted to the training data.
+#RSQ for training data (.65) much larger than RSQ for testing data (.11), suggesting
+# the model is overfitted to the training data.
+
+lr_performance <- cbind(aac_test,
+                  as.data.frame(predicted_te)
+)
+ggplot(lr_performance, aes(x=predicted_te, y=time_in_shelter_days)) + 
+  geom_point(size=1)+
+  labs(x = "predicted days", y="days in shelter (observed)", 
+       title="Model Performance on Test Data")
 
 
 #-----------------------------------------#

@@ -1,7 +1,7 @@
 ---
 title: "Predicting Length of Stay for Shelter Dogs"
 author: "Rachael Latimer"
-fontsize: 11pt
+fontsize: 12pt
 output:
   pdf_document
 ---
@@ -56,6 +56,7 @@ ggplot(data = month_count, mapping = aes(intake_month,n)) +
 ```
 **Figure 1.** _Shelter Animals Taken in Each Month_
 
+\  
 
 **Table 1.** _Type of Shelter Animal Taken in Each Month_
 
@@ -125,6 +126,7 @@ aac<-aac %>%
 
 It is also of interest to explore the relationship between the average length of stay in the shelter of each breed with the frequency of that breed present in the shelter. Table 2 provides the average length of stay in the shelter for the 25 most frequently taken in dog breeds. 
 
+\  
 **Table 2.** _Average Length of Stay (in days) for Most Common Dog Breeds in Shelter_
 
 ```{r table2, warning = FALSE, message = FALSE, echo=FALSE}
@@ -220,7 +222,7 @@ lr <- caret::train(blueprint_aac,
                           method    = "lm", 
                           trControl = cv)
 
-lr$bestTune
+#lr$bestTune
 #   RMSE      Rsquared   MAE     
 #  
 
@@ -320,9 +322,26 @@ bt_rsqd <- cor(aac_test$time_in_shelter_days,predicted_te)^2
 |     In order to predict the length of stay of shelter dogs, three types of modeling approaches were explored: linear regression, linear regression with ridge penalty, and bagged trees. These models were chosen for their increasing complexity to determine the extent to which the increasing complexity added value to or impacted the predictions and importance of variables used in the predictions. All models were fit with 10-fold cross validation for comparison purposes. The performances of the models will be compared using the values of R-squared, MAE, and RMSE.
 
 ## Results
-|     The linear regression without regularization produced an RMSE of 37.66, and MAE of 16.77 and an r-squared of .11. The linear regression with ridge penalty produced an RMSE of 37.66, MAE of 16.57, and r-squared of .11. These results are very similar to those of the linear regression without regularization. The model also revealed the top ten predictors of length of stay for shelter dogs, which included eight specific breeds (Table 3).
+|     The linear regression without regularization produced an RMSE of 37.66, and MAE of 16.77 and an r-squared of .11. Even though I used 10-fold cross-validation while training the dataset, the r-squared of .11 on the testing data was much smaller than the r-squared on the training data of .65, suggesting the model is overfitted to the training data. This drop in performance means the linear regression model without regularization is not a realistic method for predicting the length of stay of shelter dogs. Figure 2 illustrates the underperformance of this model. 
 
+\  
 
+```{r rpredictors, warning = FALSE, message = FALSE, echo=FALSE}
+lr_performance <- cbind(aac_test,
+                  as.data.frame(predicted_te)
+)
+ggplot(lr_performance, aes(x=predicted_te, y=time_in_shelter_days)) + 
+  geom_point(size=1)+
+  labs(x = "predicted days", y="days in shelter (observed)", 
+       title="Model Performance on Test Data")
+```
+**Figure 2.** _Linear Regression without Regularization Model Performance_
+
+\  
+
+|    The linear regression with ridge penalty produced an RMSE of 37.66, MAE of 16.57, and r-squared of .11. These results are very similar to those of the linear regression without regularization. The model also revealed the top ten predictors of length of stay for shelter dogs, which included eight specific breeds (Table 3).
+
+\  
 **Table 3.** _Top Ten Predictors of Shelter Length of Stay from Linear Regression with Ridge Penalty Model_
 ```{r rpredictors, warning = FALSE, message = FALSE, echo=FALSE}
 
@@ -333,7 +352,10 @@ topten %>%
   kable_styling(font_size = 11, position = "left", full_width = FALSE)
 ```
 
+\  
+
 |    The bagged tree model had a similar RMSE as the linear regression without regularization and the linear regression with ridge penalty (34.45), a lower MAE of 12.36, and a higher r-squared at .26. Due to the similar RMSE and MAE of all three models, I would choose the bagged tree model due to the higher r-squared value. The three models are compared in Table 4. 
+\  
 
 **Table 4.** _Model Comparison_
 ```{r comparison, warning = FALSE, message = FALSE, echo=FALSE}
@@ -364,7 +386,9 @@ SumTable %>%
 ## Discussion
 |     As Table 3 illustrated, the breed of the dog is highly predictive of the amount of time a dog spends in an animal shelter. Although there are a number of large breed dogs, there is not an obvious category of dog that is more predictive of the length of stay. For example, there are representatives of a variety of AKC dog groups: the non-sporting group (Bulldog, Tibetan Spaniel), the herding group (Collie), hound (Coonhound); sizes: the Terrier and the Tibetan Spaniel being small dogs, and the Retriever and Bulldog being larger dogs, and temperament. This suggests there may be some prejudice or unfamiliarity of some breeds. 
 
+|    The three models performed similarly with respect to RMSE. This was not surprising based on the examples we have worked with in class that have performed similarly as well. The difference between the r-squared values of the random forest model to the linear regression models was surprising, even though all values were low. 
+
 ## Conclusion
-|     This wide variety of dog breeds in the top ten category is surprising. I would have thoughts that the larger dogs and bully-type dogs would occupy the top spots. I was not, however, surprised that breed was a top predictor of the length of stay in the shelter. The breed of the dog is often the best predictor of temperament of a dog, however if the breed listed is only based on a dog’s appearance and not genetics or the dog’s history, then breed is less powerful of a predictor. Shelters may find they have better success matching shelter dogs with their forever families if they provide a more thorough behavioral evaluation of the dog and assessment of the dog’s future needs to potential adopters. 
+|     This wide variety of dog breeds in the top ten category is surprising. I would have thought that the larger dogs and bully-type dogs would occupy the top spots. I was not, however, surprised that breed was a top predictor of the length of stay in the shelter. The breed of the dog is often the best predictor of temperament of a dog, however if the breed listed is only based on a dog’s appearance and not genetics or the dog’s history, then breed is less powerful of a predictor. Shelters may find they have better success matching shelter dogs with their forever families if they provide a more thorough behavioral evaluation of the dog and assessment of the dog’s future needs to potential adopters. 
 
 
