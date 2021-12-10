@@ -39,14 +39,12 @@ month_count_wide <- month_count %>%
 
 
 |     As people stayed home for most of the early days of the coronavirus pandemic, the demand for goods and services increased. Some of the increased demand was not surprising and likely expected; items such as home workout equipment, trampolines, and lumber. However, some of the demand took the industry by surprise: yeast for baking, and pets. In fact, the interest in pet adoption increased so much that shelters were regularly reporting empty kennels and sifting through dozens of adoption applications for a single puppy.  
-|     Unfortunately, as vaccines were rolled out and people began returning to work and school, shelters and foster groups filled up with animals that were no longer compatible with people’s lifestyles. The decrease in demand for dogs means that people can be more selective in the kind of dog they adopt. However, the information provided by animal shelters and rescue groups are often based on a short period of time with the animal and the animal’s appearance. One shelter’s Border collie mix might be another’s spaniel or shepherd mix. This best guess breed identification can have significant impacts on a dog’s future and could be the difference between adoption and euthanasia. Objectively identifying the impact of a dog’s listed breed on the length of stay in an animal shelter could provide shelters with the information needed to shift away from listing a dog’s breed as the primary information for potential adopter and toward a more holistic evaluation of a dog’s temperament and future needs.
 
-```{r cars, warning = FALSE, message = FALSE, echo=TRUE}
-summary(cars)
-```
+|     Unfortunately, as vaccines were rolled out and people began returning to work and school, shelters and foster groups filled up with animals that were no longer compatible with people’s lifestyles. The decrease in demand for dogs means that people can be more selective in the kind of dog they adopt. However, the information provided by animal shelters and rescue groups are often based on a short period of time with the animal and the animal’s appearance. One shelter’s Border collie mix might be another’s spaniel or shepherd mix. This best guess breed identification can have significant impacts on a dog’s future and could be the difference between adoption and euthanasia. Objectively identifying the impact of a dog’s listed breed on the length of stay in an animal shelter could provide shelters with the information needed to shift away from listing a dog’s breed as the primary information for potential adopter and toward a more holistic evaluation of a dog’s temperament and future needs.
 
 ## Data
 |     The Austin Animal Center in Texas is the largest no-kill shelter in the US. The shelter maintains data on the intake and outcomes of animals beginning from October 2013 to present. This data set was obtained from kaggle: (https://www.kaggle.com/aaronschlegel/austin-animal-center-shelter-intakes-and-outcomes?select=aac_intakes_outcomes.csv). It was originally provided by the Austin Animal Center in Austin, Texas. The data include information about the intake and outcome of the animal, and details on the type and condition of the animal. A brief examination of the data revealed that the animal shelter takes in animals in addition to typical domestic pets (cats and dogs). For the purposes of this study, the following types of animals were excluded: cats, birds, and animals that were classified as other, including rabbits, bats, snakes, raccoons, ferrets, reptiles, and other wild animals that live in close proximity to humans. Additionally, dog breeds with sample sizes less than 20 were excluded as this small sample made it difficult to accurately model the length of stay for the breed. The final data set included variables of the animal (breed, age on intake, sex, condition of the animal), circumstances of the animal arriving at the shelter (type of intake, month of intake), and specifics of the outcome of the animal (outcome, month of outcome, time spent in the shelter, measured in days).  
+
 |     Initial data visualization was performed to understand the data available. This included visualizing the number of animals taken into the shelter each month (Figure 1) and further exploring the number of each type of animal taken in each month (Table 1). 
 
 
@@ -128,6 +126,7 @@ aac<-aac %>%
 It is also of interest to explore the relationship between the average length of stay in the shelter of each breed with the frequency of that breed present in the shelter. Table 2 provides the average length of stay in the shelter for the 25 most frequently taken in dog breeds. 
 
 **Table 2.** _Average Length of Stay (in days) for Most Common Dog Breeds in Shelter_
+
 ```{r table2, warning = FALSE, message = FALSE, echo=FALSE}
 
 table_breed <- aac %>% 
@@ -301,7 +300,7 @@ aac_bt <- caret::train(blueprint_aac,
                                num.trees = 10,
                                max.depth = 60)
 
-aac_bt$times
+#aac_bt$times
 
 # Predictions from a Bagged tree model with xx trees
 
@@ -326,7 +325,12 @@ bt_rsqd <- cor(aac_test$time_in_shelter_days,predicted_te)^2
 
 **Table 3.** _Top Ten Predictors of Shelter Length of Stay from Linear Regression with Ridge Penalty Model_
 ```{r rpredictors, warning = FALSE, message = FALSE, echo=FALSE}
-head(as.matrix(coefs.nonzero[ind[-1]]),10)
+
+topten<-head(as.matrix(coefs.nonzero[ind[-1]]),10)
+
+topten %>%
+  kable(col.names = c('Predictor')) %>%
+  kable_styling(font_size = 11, position = "left", full_width = FALSE)
 ```
 
 |    The bagged tree model had a similar RMSE as the linear regression without regularization and the linear regression with ridge penalty (34.45), a lower MAE of 12.36, and a higher r-squared at .26. Due to the similar RMSE and MAE of all three models, I would choose the bagged tree model due to the higher r-squared value. The three models are compared in Table 4. 
@@ -351,7 +355,9 @@ lrmod <- data.frame(Model = c("Linear Regression"),
 #Final Table
 #needs formatting
 SumTable <- rbind(lrmod, ridgemod, bagmod)
-SumTable
+SumTable %>%
+  kable(col.names = c('Model', 'RMSE', 'MAE', 'Rsqd')) %>%
+  kable_styling(font_size = 11, position = "left", full_width = FALSE)
 ```
 
 

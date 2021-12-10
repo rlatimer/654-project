@@ -20,7 +20,7 @@ require(forcats)
 require(gt)
 require(knitr)
 require(kableExtra)
-tinytex::install_tinytex()
+#tinytex::install_tinytex()
 # tinytex::uninstall_tinytex()
 
 data <- read_csv("C:/Users/rlatimer/Documents/personal/EDLD MS/EDLD 654 DS/654project/data/aac_intakes_outcomes.csv")
@@ -224,7 +224,12 @@ length(coefs.nonzero)
 ind   <- order(abs(coefs.nonzero),decreasing=T)
 
 #using as a table: needs formatting
-head(as.matrix(coefs.nonzero[ind[-1]]),10)
+topten<-head(as.matrix(coefs.nonzero[ind[-1]]),10)
+
+
+topten %>%
+  kable(col.names = c('Predictor')) %>%
+  kable_styling(font_size = 11, position = "left", full_width = FALSE)
 
 #breed is the most important predictor of time in the shelter.
 
@@ -285,7 +290,11 @@ lrmod <- data.frame(Model = c("Linear Regression"),
 #Final Table
 #needs formatting
 SumTable <- rbind(lrmod, ridgemod, bagmod)
-SumTable
+
+SumTable %>%
+  kable(col.names = c('Model', 'RMSE', 'MAE', 'Rsqd')) %>%
+  kable_styling(font_size = 11, position = "left", full_width = FALSE)
+
 
 #Visualizations
 #pivot wider?
