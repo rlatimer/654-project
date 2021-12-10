@@ -20,7 +20,8 @@ require(forcats)
 require(gt)
 require(knitr)
 require(kableExtra)
-#tinytex::reinstall_tinytex()
+tinytex::install_tinytex()
+# tinytex::uninstall_tinytex()
 
 data <- read_csv("C:/Users/rlatimer/Documents/personal/EDLD MS/EDLD 654 DS/654project/data/aac_intakes_outcomes.csv")
 

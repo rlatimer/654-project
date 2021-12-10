@@ -1,0 +1,399 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+  11pt,
+]{article}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+  \usepackage{amssymb}
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Predicting Length of Stay for Shelter Dogs},
+  pdfauthor={Rachael Latimer},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{caption}
+\ifluatex
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
+\title{Predicting Length of Stay for Shelter Dogs}
+\author{Rachael Latimer}
+\date{}
+
+\begin{document}
+\maketitle
+
+~~~~As people stayed home for most of the early days of the coronavirus
+pandemic, the demand for goods and services increased. Some of the
+increased demand was not surprising and likely expected; items such as
+home workout equipment, trampolines, and lumber. However, some of the
+demand took the industry by surprise: yeast for baking, and pets. In
+fact, the interest in pet adoption increased so much that shelters were
+regularly reporting empty kennels and sifting through dozens of adoption
+applications for a single puppy.\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}Unfortunately,
+as vaccines were rolled out and people began returning to work and
+school, shelters and foster groups filled up with animals that were no
+longer compatible with people's lifestyles. The decrease in demand for
+dogs means that people can be more selective in the kind of dog they
+adopt. However, the information provided by animal shelters and rescue
+groups are often based on a short period of time with the animal and the
+animal's appearance. One shelter's Border collie mix might be another's
+spaniel or shepherd mix. This best guess breed identification can have
+significant impacts on a dog's future and could be the difference
+between adoption and euthanasia. Objectively identifying the impact of a
+dog's listed breed on the length of stay in an animal shelter could
+provide shelters with the information needed to shift away from listing
+a dog's breed as the primary information for potential adopter and
+toward a more holistic evaluation of a dog's temperament and future
+needs.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(cars)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##      speed           dist       
+##  Min.   : 4.0   Min.   :  2.00  
+##  1st Qu.:12.0   1st Qu.: 26.00  
+##  Median :15.0   Median : 36.00  
+##  Mean   :15.4   Mean   : 42.98  
+##  3rd Qu.:19.0   3rd Qu.: 56.00  
+##  Max.   :25.0   Max.   :120.00
+\end{verbatim}
+
+\hypertarget{data}{%
+\subsection{Data}\label{data}}
+
+~~~~The Austin Animal Center in Texas is the largest no-kill shelter in
+the US. The shelter maintains data on the intake and outcomes of animals
+beginning from October 2013 to present. This data set was obtained from
+kaggle:
+(\url{https://www.kaggle.com/aaronschlegel/austin-animal-center-shelter-intakes-and-outcomes?select=aac_intakes_outcomes.csv}).
+It was originally provided by the Austin Animal Center in Austin, Texas.
+The data include information about the intake and outcome of the animal,
+and details on the type and condition of the animal. A brief examination
+of the data revealed that the animal shelter takes in animals in
+addition to typical domestic pets (cats and dogs). For the purposes of
+this study, the following types of animals were excluded: cats, birds,
+and animals that were classified as other, including rabbits, bats,
+snakes, raccoons, ferrets, reptiles, and other wild animals that live in
+close proximity to humans. Additionally, dog breeds with sample sizes
+less than 20 were excluded as this small sample made it difficult to
+accurately model the length of stay for the breed. The final data set
+included variables of the animal (breed, age on intake, sex, condition
+of the animal), circumstances of the animal arriving at the shelter
+(type of intake, month of intake), and specifics of the outcome of the
+animal (outcome, month of outcome, time spent in the shelter, measured
+in days).\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}Initial
+data visualization was performed to understand the data available. This
+included visualizing the number of animals taken into the shelter each
+month (Figure 1) and further exploring the number of each type of animal
+taken in each month (Table 1).
+
+\begin{center}\includegraphics{654-final-project-report_files/figure-latex/fig1-1} \end{center}
+
+\textbf{Figure 1.} \emph{Shelter Animals Taken in Each Month}
+
+\textbf{Table 1.} \emph{Type of Shelter Animal Taken in Each Month}
+
+\captionsetup[table]{labelformat=empty,skip=1pt}
+\begin{longtable}{rrrrr}
+\toprule
+ & \multicolumn{4}{c}{Animal Type} \\ 
+ \cmidrule(lr){2-5}
+Intake Month & Bird & Cat & Dog & Other \\ 
+\midrule
+1 & 19 & 1529 & 4181 & 253 \\ 
+2 & 61 & 1320 & 3970 & 326 \\ 
+3 & 26 & 1600 & 4096 & 891 \\ 
+4 & 35 & 2330 & 3353 & 394 \\ 
+5 & 38 & 3741 & 3867 & 320 \\ 
+6 & 24 & 3519 & 3556 & 360 \\ 
+7 & 25 & 2893 & 3312 & 298 \\ 
+8 & 22 & 2819 & 3271 & 386 \\ 
+9 & 23 & 2756 & 3420 & 290 \\ 
+10 & 29 & 3003 & 4215 & 405 \\ 
+11 & 19 & 2285 & 4038 & 255 \\ 
+12 & 18 & 1744 & 4087 & 250 \\ 
+ \bottomrule
+\end{longtable}
+
+It is also of interest to explore the relationship between the average
+length of stay in the shelter of each breed with the frequency of that
+breed present in the shelter. Table 2 provides the average length of
+stay in the shelter for the 25 most frequently taken in dog breeds.
+
+\textbf{Table 2.} \emph{Average Length of Stay (in days) for Most Common
+Dog Breeds in Shelter} \begingroup\fontsize{11}{13}\selectfont
+
+\begin{tabular}{l|r|r}
+\hline
+Breed & N & Avg. Length of Stay (days)\\
+\hline
+Pit Bull & 6865 & 28.028652\\
+\hline
+Labrador Retriever & 6260 & 16.906381\\
+\hline
+Chihuahua Shorthair & 5726 & 11.841401\\
+\hline
+German Shepherd & 2612 & 12.771461\\
+\hline
+Australian Cattle Dog & 1442 & 19.901094\\
+\hline
+Dachshund & 1239 & 8.671506\\
+\hline
+Boxer & 948 & 19.438599\\
+\hline
+Border Collie & 928 & 12.298963\\
+\hline
+Miniature Poodle & 841 & 7.600594\\
+\hline
+Beagle & 642 & 12.259929\\
+\hline
+Siberian Husky & 641 & 8.506920\\
+\hline
+Catahoula & 638 & 23.371538\\
+\hline
+Australian Shepherd & 624 & 10.586646\\
+\hline
+Jack Russell Terrier & 623 & 10.260468\\
+\hline
+Yorkshire Terrier & 621 & 7.316022\\
+\hline
+Rat Terrier & 598 & 10.200137\\
+\hline
+Miniature Schnauzer & 584 & 5.601945\\
+\hline
+Great Pyrenees & 516 & 10.899884\\
+\hline
+Rottweiler & 493 & 18.182440\\
+\hline
+Shih Tzu & 463 & 4.929401\\
+\hline
+Pointer & 448 & 22.045905\\
+\hline
+Chihuahua Longhair & 446 & 7.845548\\
+\hline
+Cairn Terrier & 436 & 8.984851\\
+\hline
+Staffordshire & 418 & 28.627440\\
+\hline
+American Bulldog & 381 & 39.187939\\
+\hline
+\end{tabular}
+\endgroup{}
+
+\hypertarget{models}{%
+\subsection{Models}\label{models}}
+
+\begin{verbatim}
+##   intercept
+## 1      TRUE
+\end{verbatim}
+
+\begin{verbatim}
+## $everything
+##    user  system elapsed 
+##   36.09    0.50   12.46 
+## 
+## $final
+##    user  system elapsed 
+##    3.53    0.02    1.04 
+## 
+## $prediction
+## [1] NA NA NA
+\end{verbatim}
+
+~~~~In order to predict the length of stay of shelter dogs, three types
+of modeling approaches were explored: linear regression, linear
+regression with ridge penalty, and bagged trees. These models were
+chosen for their increasing complexity to determine the extent to which
+the increasing complexity added value to or impacted the predictions and
+importance of variables used in the predictions. All models were fit
+with 10-fold cross validation for comparison purposes. The performances
+of the models will be compared using the values of R-squared, MAE, and
+RMSE.
+
+\hypertarget{results}{%
+\subsection{Results}\label{results}}
+
+~~~~The linear regression without regularization produced an RMSE of
+37.66, and MAE of 16.77 and an r-squared of .11. The linear regression
+with ridge penalty produced an RMSE of 37.66, MAE of 16.57, and
+r-squared of .11. These results are very similar to those of the linear
+regression without regularization. The model also revealed the top ten
+predictors of length of stay for shelter dogs, which included eight
+specific breeds (Table 3).
+
+\textbf{Table 3.} \emph{Top Ten Predictors of Shelter Length of Stay
+from Linear Regression with Ridge Penalty Model}
+
+\begin{verbatim}
+##                                      [,1]
+## na_ind_outcome_type             -29.54081
+## breed_American.Bulldog           24.37111
+## breed_Bulldog                    20.68927
+## (Intercept)                      19.10515
+## breed_Collie.Smooth              18.35328
+## breed_Tibetan.Spaniel           -18.22182
+## breed_English.Coonhound          17.58684
+## breed_American.Pit.Bull.Terrier  17.40489
+## breed_Silky.Terrier             -16.77498
+## breed_Flat.Coat.Retriever        14.29413
+\end{verbatim}
+
+~~~The bagged tree model had a similar RMSE as the linear regression
+without regularization and the linear regression with ridge penalty
+(34.45), a lower MAE of 12.36, and a higher r-squared at .26. Due to the
+similar RMSE and MAE of all three models, I would choose the bagged tree
+model due to the higher r-squared value. The three models are compared
+in Table 4.
+
+\textbf{Table 4.} \emph{Model Comparison}
+
+\begin{verbatim}
+##                                  Model     RMSE      MAE       Rsq
+## 1                    Linear Regression 37.65603 16.76878 0.1077589
+## 2 Linear Regression with Ridge Penalty 37.66347 16.57493 0.1068479
+## 3                   Bagged Trees Model 34.45266 12.36240 0.2590010
+\end{verbatim}
+
+\hypertarget{discussion}{%
+\subsection{Discussion}\label{discussion}}
+
+~~~~As Table 3 illustrated, the breed of the dog is highly predictive of
+the amount of time a dog spends in an animal shelter. Although there are
+a number of large breed dogs, there is not an obvious category of dog
+that is more predictive of the length of stay. For example, there are
+representatives of a variety of AKC dog groups: the non-sporting group
+(Bulldog, Tibetan Spaniel), the herding group (Collie), hound
+(Coonhound); sizes: the Terrier and the Tibetan Spaniel being small
+dogs, and the Retriever and Bulldog being larger dogs, and temperament.
+This suggests there may be some prejudice or unfamiliarity of some
+breeds.
+
+\hypertarget{conclusion}{%
+\subsection{Conclusion}\label{conclusion}}
+
+~~~~This wide variety of dog breeds in the top ten category is
+surprising. I would have thoughts that the larger dogs and bully-type
+dogs would occupy the top spots. I was not, however, surprised that
+breed was a top predictor of the length of stay in the shelter. The
+breed of the dog is often the best predictor of temperament of a dog,
+however if the breed listed is only based on a dog's appearance and not
+genetics or the dog's history, then breed is less powerful of a
+predictor. Shelters may find they have better success matching shelter
+dogs with their forever families if they provide a more thorough
+behavioral evaluation of the dog and assessment of the dog's future
+needs to potential adopters.
+
+\end{document}

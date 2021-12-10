@@ -3,8 +3,7 @@ title: "Predicting Length of Stay for Shelter Dogs"
 author: "Rachael Latimer"
 fontsize: 11pt
 output:
-  pdf_document:
-    highlight: tango
+  pdf_document
 ---
 
 ```{r setup, include=FALSE, warning=FALSE}
@@ -87,25 +86,6 @@ tab_spanner(
   cols_label(intake_month = "Intake Month")
 ```
 
-It is also of interest to explore the relationship between the average length of stay in the shelter of each breed with the frequency of that breed present in the shelter. Table 2 provides the average length of stay in the shelter for the 25 most frequently taken in dog breeds. 
-
-**Table 2.** _Average Length of Stay (in days) for Most Common Dog Breeds in Shelter_
-```{r table2, warning = FALSE, message = FALSE, echo=FALSE}
-table_breed<-aac %>% group_by(breed) %>% summarize(Freq=n()) %>% arrange(desc(Freq))
-
-shelter_days<-aac %>%
-  group_by(breed) %>%
-  summarise_at(vars(time_in_shelter_days), mean)
-
-shelter_breed<-left_join(table_breed, shelter_days) %>%
-  arrange(desc(Freq)) %>%
-  slice_head(n=25)
-
-shelter_breed %>%
-  kable(col.names = c('Breed', 'N', 'Avg. Length of Stay (days)')) %>%
-  kable_styling(font_size = 11, position = "left", full_width = FALSE)
-```
-
 ```{r processing, warning = FALSE, message = FALSE, echo=FALSE}
 
 #only keep dogs
@@ -143,6 +123,29 @@ aac <- initial4 %>%
 aac<-aac %>%
   group_by(breed) %>%
   filter(n() > 19)
+```
+
+It is also of interest to explore the relationship between the average length of stay in the shelter of each breed with the frequency of that breed present in the shelter. Table 2 provides the average length of stay in the shelter for the 25 most frequently taken in dog breeds. 
+
+**Table 2.** _Average Length of Stay (in days) for Most Common Dog Breeds in Shelter_
+```{r table2, warning = FALSE, message = FALSE, echo=FALSE}
+
+table_breed <- aac %>% 
+  group_by(breed) %>% 
+  summarize(Freq=n()) %>% 
+  arrange(desc(Freq))
+
+shelter_days<-aac %>%
+  group_by(breed) %>%
+  summarise_at(vars(time_in_shelter_days), mean)
+
+shelter_breed<-left_join(table_breed, shelter_days) %>%
+  arrange(desc(Freq)) %>%
+  slice_head(n=25)
+
+shelter_breed %>%
+  kable(col.names = c('Breed', 'N', 'Avg. Length of Stay (days)')) %>%
+  kable_styling(font_size = 11, position = "left", full_width = FALSE)
 ```
 
 ## Models
